@@ -11,7 +11,7 @@ import scala.io.Source
 /**
   * Created by chauhraj on 9/20/16.
   */
-package object chat {
+package object vijar {
 
   implicit def localDateTimeJsonFormat = new RootJsonFormat[LocalDateTime] {
     val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME

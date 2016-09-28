@@ -1,4 +1,4 @@
-package chat
+package vijar
 
 import java.nio.file.Paths
 import java.time.{Instant, LocalDateTime, ZoneId}
@@ -43,22 +43,7 @@ object Server {
       case _ => reject(ExpectedWebSocketRequestRejection)
     }
 
-    val route = pathPrefix("ws" / "chat") {
-      pathEndOrSingleSlash {
-        handleWebsocket { ws =>
-          complete {
-            val source = Source.actorPublisher[Int](Props[TickActor]).map{
-              i =>
-                val v = TextMessage.Strict(i.toString)
-                println("Value of v:" + v)
-                v
-            }
-            ws.handleMessagesWithSinkSource(Sink.ignore, source)
-          }
-
-        }
-      }
-    } ~ pathPrefix("subscribe" / "prices") {
+    val route = pathPrefix("subscribe" / "prices") {
       pathEndOrSingleSlash {
         handleWebsocket { ws =>
           complete {
@@ -87,36 +72,8 @@ object Server {
 }
 
 
-object Tick
-class TickActor extends ActorPublisher[Int] {
-  import scala.concurrent.duration._
 
-  implicit val ec = context.dispatcher
 
-  val tick = context.system.scheduler.schedule(1 second, 1 second, self, Tick)
-
-  var cnt = 123456
-  var buffer = Vector.empty[Int]
-
-  override def receive: Receive = {
-    case Tick => {
-      cnt = cnt + 1
-      if (buffer.isEmpty && totalDemand > 0) {
-        onNext(cnt)
-      }
-      else {
-        buffer :+ (cnt)
-        if (totalDemand > 0) {
-          val (use,keep) = buffer.splitAt(totalDemand.toInt)
-          buffer = keep
-          use foreach onNext
-        }
-      }
-    }
-  }
-
-  override def postStop() = tick.cancel()
-}
 
 class PriceActor(val config: Config) extends ActorPublisher[Price] {
   import scala.concurrent.duration._
